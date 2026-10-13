@@ -1,0 +1,10 @@
+build/out/
+build/classes.dex
+build/*.jks
+*.jks
+*.keystore
+*.apk
+*.zip
+tools/aapt2*
+tools/android.jar
+.DS_Store

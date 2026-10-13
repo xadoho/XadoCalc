@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>XadoCalc</title>
+<style>
+:root{
+  --bg:#F4F2EA;--grid:rgba(70,100,170,.10);--card:#fff;--card2:#F7F6F1;--ink:#1A2238;--muted:#69708A;--line:rgba(26,34,56,.10);
+  --accent:#2F4BD8;--accent-ink:#fff;--accent-soft:rgba(47,75,216,.10);--red:#D6453D;--green:#1F9D63;--amber:#B87C0C;
+  --hl:rgba(255,212,0,.42);--key:#fff;--key-op:#E8ECFB;--key-press:#DDE3FA;--header:#141A2E;--shadow:0 1px 2px rgba(20,30,60,.06),0 6px 18px rgba(20,30,60,.06);
+  --serif:"Noto Serif","Source Serif Pro",Georgia,"Times New Roman",serif;--sans:Roboto,"Segoe UI",system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101613;--grid:rgba(255,255,255,.035);--card:#18201C;--card2:#1E2823;--ink:#E9EEE8;--muted:#94A39A;--line:rgba(255,255,255,.08);
+  --accent:#8FA8FF;--accent-ink:#0E1530;--accent-soft:rgba(143,168,255,.14);--red:#FF7F73;--green:#4FD19A;--amber:#F2B84B;
+  --hl:rgba(255,212,0,.22);--key:#1C2521;--key-op:#212C3E;--key-press:#2B3850;--shadow:0 1px 2px rgba(0,0,0,.3);
+}}
+:root[data-theme="dark"]{
+  --bg:#101613;--grid:rgba(255,255,255,.035);--card:#18201C;--card2:#1E2823;--ink:#E9EEE8;--muted:#94A39A;--line:rgba(255,255,255,.08);
+  --accent:#8FA8FF;--accent-ink:#0E1530;--accent-soft:rgba(143,168,255,.14);--red:#FF7F73;--green:#4FD19A;--amber:#F2B84B;
+  --hl:rgba(255,212,0,.22);--key:#1C2521;--key-op:#212C3E;--key-press:#2B3850;--shadow:0 1px 2px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:16px}html[data-font="s"]{font-size:14px}html[data-font="l"]{font-size:17.5px}html[data-font="xl"]{font-size:19px}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);overflow:hidden;overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+input{font:inherit;color:inherit}
+#app{height:100%;display:flex;flex-direction:column}
+.top{flex:none;height:56px;background:var(--header);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 16px;position:relative;z-index:5}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.14);display:grid;place-items:center;font:600 13px/1 var(--serif)}
+.logo .fr{font-size:13px}
+.brand h1{margin:0;font:600 19px/1.1 var(--sans);letter-spacing:.2px}
+.brand p{margin:2px 0 0;font-size:12px;opacity:.72}
+.icon-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;transition:background .2s}
+.icon-btn:active{background:rgba(255,255,255,.14)}
+.icon-btn svg{width:22px;height:22px}
+main{flex:1;position:relative;overflow:hidden;overflow:clip}
+.tab{position:absolute;inset:0;overflow:hidden;overflow:clip;display:flex;flex-direction:column;opacity:0;transform:translateX(calc(var(--dir,1)*24px));pointer-events:none;transition:opacity .28s var(--ease),transform .38s var(--ease);visibility:hidden}
+.tab.active{opacity:1;transform:none;pointer-events:auto;visibility:visible}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 14px 24px;-webkit-overflow-scrolling:touch;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:22px 22px;background-attachment:local}
+.card{background:var(--card);border-radius:18px;box-shadow:var(--shadow);border:1px solid var(--line);padding:14px 16px}
+.hidden{display:none!important}
+
+.math{font-family:var(--serif);font-size:1.3rem;line-height:1.25;white-space:nowrap;overflow-x:auto;overflow-y:hidden;padding:.35em .1em;scrollbar-width:none}
+.math::-webkit-scrollbar{display:none}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .1em;line-height:1.1}
+.fn{border-bottom:.075em solid currentColor;padding:0 .18em .06em}
+.fd{padding:.06em .18em 0}
+.fr .fr{font-size:.86em}
+.mw{margin-right:.06em}
+.op{margin:0 .32em}
+.eq{margin:0 .38em;color:var(--muted)}
+sup{font-size:.62em;line-height:0;vertical-align:.85em;margin-left:.04em}
+sup .fr{font-size:.9em;vertical-align:.2em}
+.pr{display:inline-block}
+.pr.tl{transform:scale(1.05,1.9);margin:0 .08em;font-weight:300;vertical-align:middle}
+.sq{display:inline-flex;align-items:flex-start;vertical-align:middle;margin:0 .06em}
+.sqs{font-size:1.12em;line-height:1.15}
+.sqr{border-top:.07em solid currentColor;padding:.12em .14em 0 .08em;margin-top:.18em}
+.ri{vertical-align:.4em;margin-right:-.35em}
+.hl{background:var(--hl);border-radius:.3em;padding:.02em .14em;animation:mark .9s var(--ease) both}
+@keyframes mark{from{background-size:0 100%;box-shadow:0 0 0 .3em rgba(255,212,0,0)}to{box-shadow:0 0 0 0 rgba(255,212,0,0)}}
+
+.input-card{padding:10px 14px 6px;position:relative}
+.input-row{display:flex;align-items:center;gap:6px}
+#expr{flex:1;min-width:0;border:0;outline:0;background:transparent;font:500 1.45rem/1.4 var(--serif);padding:6px 0;caret-color:var(--accent);letter-spacing:.3px}
+#expr::placeholder{color:var(--muted);opacity:.6;font-style:italic;font-size:1.15rem}
+.clear-x{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--muted);transition:transform .2s var(--ease),opacity .2s}
+.clear-x.off{opacity:0;transform:scale(.6);pointer-events:none}
+.preview{min-height:3.2em;display:flex;align-items:center;border-top:1px dashed var(--line);margin-top:4px;color:var(--ink)}
+.preview .math{font-size:1.25rem}
+.preview .ph{color:var(--muted);font-size:.9rem;padding:.6em 0}
+.preview .err{color:var(--red);font-size:.9rem;padding:.6em 0}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 2px 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px;font:500 .95rem var(--serif);white-space:nowrap;transition:transform .15s var(--ease),background .2s}
+.chip:active{transform:scale(.95);background:var(--accent-soft)}
+.section-label{font:600 .72rem/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:18px 4px 8px}
+.empty{margin-top:6px}
+.empty .hint{color:var(--muted);font-size:.92rem;line-height:1.5;margin:14px 4px 0}
+.empty .hint b{color:var(--ink);font-weight:600}
+kbd{font:600 .85em var(--serif);background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.answer{margin-top:14px;padding:14px 16px 12px;border-left:5px solid var(--accent);animation:pop .55s var(--ease) both}
+.answer .lab .copy{margin-left:2px}
+.answer .lab{display:flex;justify-content:space-between;align-items:center;font:600 .72rem var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--accent)}
+.answer .math{font-size:1.6rem}
+.forms{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.form{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:6px 10px;font-size:.78rem;color:var(--muted);display:flex;flex-direction:column;gap:1px}
+.form .math{font-size:1.05rem;color:var(--ink);padding:.1em 0}
+.copy{font:500 .8rem var(--sans);color:var(--accent);padding:6px 10px;border-radius:10px;letter-spacing:0;text-transform:none}
+.copy:active{background:var(--accent-soft)}
+.errcard{margin-top:14px;border-left:5px solid var(--red);color:var(--ink);animation:shake .45s var(--ease) both}
+.errcard b{color:var(--red)}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}}
+.steps{list-style:none;margin:0;padding:0;position:relative}
+.steps:before{content:"";position:absolute;left:17px;top:18px;bottom:18px;width:2px;background:var(--line)}
+.step{position:relative;display:flex;gap:12px;margin-bottom:10px;animation:rise .5s var(--ease) both;animation-delay:calc(var(--i)*60ms + 120ms)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.step .n{flex:none;width:36px;height:36px;border-radius:50%;background:var(--card);border:2px solid var(--accent);color:var(--accent);display:grid;place-items:center;font:700 .95rem var(--sans);z-index:1}
+.step .body{flex:1;min-width:0;padding:10px 14px}
+.step h3{margin:0 0 2px;font:600 .95rem/1.3 var(--sans)}
+.step .note{margin:4px 0 0;color:var(--muted);font-size:.86rem;line-height:1.45}
+.step .note sup{font-size:.7em;vertical-align:.5em}
+.step .after{margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);display:flex;align-items:center;gap:8px}
+.step .after .tag{flex:none;font:600 .68rem var(--sans);color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.step .after .math{font-size:1.1rem}
+
+.keypad{flex:none;background:var(--card);border-top:1px solid var(--line);padding:6px 8px 8px;transition:transform .38s var(--ease),margin .38s var(--ease);will-change:transform;z-index:3;box-shadow:0 -6px 24px rgba(0,0,0,.06)}
+.keypad.closed{transform:translateY(100%);margin-top:calc(-1 * var(--kh,320px))}
+.grab{display:flex;justify-content:center;padding:2px 0 6px}
+.grab span{width:38px;height:4px;border-radius:2px;background:var(--line)}
+.keys{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.k{height:clamp(40px,6.3vh,54px);border-radius:14px;background:var(--key);border:1px solid var(--line);font:500 1.3rem var(--serif);display:grid;place-items:center;transition:transform .12s var(--ease),background .15s;user-select:none;-webkit-user-select:none;position:relative}
+.k.op{background:var(--key-op);color:var(--accent);font-weight:600}
+.k.fn{font:600 .95rem var(--sans);color:var(--muted)}
+.k.red{color:var(--red)}
+.k:active,.k.down{transform:scale(.93);background:var(--key-press)}
+.k .fr{font-size:.72em}
+.k>span{display:inline-flex;align-items:center;pointer-events:none}
+.fr sup{vertical-align:.45em}
+.k sup{font-size:.55em}
+.solve{grid-column:1/-1;height:clamp(44px,6.6vh,56px);border-radius:16px;background:var(--accent);color:var(--accent-ink);font:600 1.05rem var(--sans);letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s var(--ease),filter .2s}
+.solve:active{transform:scale(.97);filter:brightness(1.08)}
+.fab{position:absolute;right:16px;bottom:16px;height:48px;padding:0 18px;border-radius:24px;background:var(--accent);color:var(--accent-ink);font:600 .95rem var(--sans);display:flex;gap:8px;align-items:center;box-shadow:0 6px 18px rgba(30,50,140,.3);transition:transform .35s var(--ease),opacity .25s;z-index:2}
+.fab.off{transform:translateY(90px);opacity:0;pointer-events:none}
+.fab svg{width:18px;height:18px}
+
+nav.bottom{flex:none;height:64px;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);position:relative;z-index:6}
+nav.bottom button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font:500 .74rem var(--sans);color:var(--muted);transition:color .25s}
+nav.bottom button .ic{width:56px;height:30px;border-radius:15px;display:grid;place-items:center;transition:background .3s var(--ease),transform .3s var(--ease)}
+nav.bottom button svg{width:22px;height:22px}
+nav.bottom button.on{color:var(--ink)}
+nav.bottom button.on .ic{background:var(--accent-soft);color:var(--accent)}
+nav.bottom button:active .ic{transform:scale(.9)}
+
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 14px;font:500 .88rem var(--sans);transition:background .2s,color .2s,border-color .2s,transform .15s var(--ease)}
+.seg button.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.seg button:active{transform:scale(.95)}
+.tabs2{display:grid;grid-template-columns:1fr 1fr;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:4px;position:relative;margin-bottom:12px}
+.tabs2 button{position:relative;z-index:1;padding:9px 0;font:600 .9rem var(--sans);color:var(--muted);transition:color .25s}
+.tabs2 button.on{color:var(--ink)}
+.tabs2 .pill{position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);background:var(--card);border-radius:10px;box-shadow:var(--shadow);transition:transform .35s var(--ease)}
+.tabs2.right .pill{transform:translateX(100%)}
+
+.score{display:flex;justify-content:space-between;align-items:center;font:500 .85rem var(--sans);color:var(--muted)}
+.score b{color:var(--ink);font-size:1rem}
+.streak{display:inline-flex;align-items:center;gap:4px;background:var(--accent-soft);color:var(--accent);padding:4px 10px;border-radius:999px;font-weight:600}
+.streak.bump{animation:bump .5s var(--ease)}
+@keyframes bump{40%{transform:scale(1.25)}}
+.task{font-size:1.7rem;text-align:center;padding:.6em 0 .3em;min-height:2.6em;display:flex;align-items:center;justify-content:center}
+.task.swap{animation:swapin .45s var(--ease) both}
+@keyframes swapin{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+.ansbox{display:flex;align-items:center;justify-content:center;gap:8px;margin:6px 0 12px}
+.ansbox .eqs{font:500 1.6rem var(--serif);color:var(--muted)}
+.sign{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card2);font:600 1.2rem var(--serif);transition:transform .15s var(--ease)}
+.sign.neg{color:var(--red);border-color:var(--red)}
+.box{width:64px;height:46px;border-radius:12px;border:1.5px solid var(--line);background:var(--card2);text-align:center;font:500 1.3rem var(--serif);outline:0;transition:border-color .2s,box-shadow .2s}
+.box:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.box.w{width:54px}
+.afr{display:flex;flex-direction:column;align-items:center;gap:4px}
+.afr .bar{width:72px;height:2px;background:var(--ink);border-radius:1px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{flex:1;min-width:0;height:46px;border-radius:14px;font:600 .92rem var(--sans);display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .12s var(--ease),background .2s}
+.btn:active{transform:scale(.96)}
+.btn.pri{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:var(--card2);border:1px solid var(--line)}
+.fb{margin-top:10px;border-radius:12px;padding:10px 12px;font-size:.92rem;line-height:1.4;display:none}
+.fb.show{display:block;animation:pop .4s var(--ease) both}
+.fb.ok{background:rgba(31,157,99,.12);color:var(--green)}
+.fb.bad{background:rgba(214,69,61,.10);color:var(--red)}
+.fb.mid{background:rgba(201,138,18,.12);color:var(--amber)}
+.shake{animation:shake .45s var(--ease)}
+.var-list{margin:12px 0 0;padding:0;list-style:none;counter-reset:v}
+.var-list li{counter-increment:v;display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line);animation:rise .4s var(--ease) both;animation-delay:calc(var(--i)*35ms)}
+.var-list li:before{content:counter(v) ".";flex:none;width:26px;font:600 .9rem var(--sans);color:var(--muted)}
+.var-list .math{flex:1;font-size:1.15rem;padding:.2em 0}
+.var-list .ans{flex:none;color:var(--green);font-size:1.05rem;transition:opacity .25s,transform .25s var(--ease)}
+#varList.noans .ans{opacity:0;transform:translateX(8px)}
+.toggle{display:flex;align-items:center;gap:10px;font-size:.92rem;margin-top:12px;user-select:none}
+.sw{width:42px;height:24px;border-radius:12px;background:var(--line);position:relative;transition:background .25s}
+.sw:after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .25s var(--ease)}
+.toggle.on .sw{background:var(--accent)}
+.toggle.on .sw:after{transform:translateX(18px)}
+
+.tool{margin-bottom:12px;overflow:hidden;padding:0}
+.tool>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:14px 16px;font:600 1rem var(--sans);cursor:pointer}
+.tool>summary::-webkit-details-marker{display:none}
+.tool>summary .ti{width:36px;height:36px;border-radius:11px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font:600 .9rem var(--serif);flex:none}
+.tool>summary .ti .fr{font-size:.8rem}
+.tool>summary small{display:block;font:400 .8rem var(--sans);color:var(--muted);margin-top:2px}
+.tool>summary .chev{margin-left:auto;transition:transform .3s var(--ease);color:var(--muted)}
+.tool[open]>summary .chev{transform:rotate(180deg)}
+.tool .tb{padding:0 16px 16px;animation:rise .35s var(--ease) both}
+.field{width:100%;height:46px;border-radius:12px;border:1.5px solid var(--line);background:var(--card2);padding:0 12px;font:500 1.1rem var(--serif);outline:0;transition:border-color .2s,box-shadow .2s}
+.field:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.two{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+.vs{font:600 1.4rem var(--serif);color:var(--accent);min-width:28px;text-align:center;transition:transform .3s var(--ease)}
+.out{margin-top:10px;font-size:.92rem;line-height:1.5}
+.out .math{font-size:1.1rem;padding:.15em 0}
+.out .muted{color:var(--muted)}
+.big-sign{font:600 2.2rem var(--serif);color:var(--accent);text-align:center;animation:pop .4s var(--ease) both}
+
+.scrim{position:fixed;inset:0;background:rgba(10,15,30,.45);opacity:0;pointer-events:none;transition:opacity .3s;z-index:20}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:86%;background:var(--bg);border-radius:22px 22px 0 0;transform:translateY(105%);transition:transform .42s var(--ease);z-index:21;display:flex;flex-direction:column}
+.sheet.on{transform:none}
+.sheet .sh-head{display:flex;align-items:center;justify-content:space-between;padding:10px 8px 6px 18px;font:600 1rem var(--sans)}
+.sheet .sh-head button{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
+.sheet .scroll{padding-top:4px}
+.toast{position:fixed;left:50%;bottom:84px;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font:500 .88rem var(--sans);opacity:0;transition:opacity .25s,transform .35s var(--ease);z-index:30;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.hbtns{display:flex}
+.mark{width:36px;height:36px;flex:none;display:block}
+.brand h1{letter-spacing:.3px}
+.tgi{width:22px;height:22px}
+.tg-card{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 14px;margin:6px 0 4px;box-shadow:var(--shadow);transition:transform .15s var(--ease)}
+.tg-card:active{transform:scale(.98)}
+.tg-ic{width:40px;height:40px;border-radius:12px;background:#2AABEE;color:#fff;display:grid;place-items:center;flex:none}
+.tg-t{flex:1;min-width:0;display:flex;flex-direction:column}
+.tg-t b{font:600 .95rem var(--sans)}
+.tg-t small{font-size:.8rem;color:var(--muted);margin-top:2px}
+.chev2{color:var(--muted);flex:none}
+.series{display:flex;align-items:center;gap:10px;margin-top:12px;font:600 .78rem var(--sans);color:var(--muted)}
+.sbar{flex:1;display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.sbar i{height:6px;border-radius:3px;background:var(--line);transition:background .35s var(--ease),transform .35s var(--ease)}
+.sbar i.ok{background:var(--green)}
+.sbar i.bad{background:var(--red)}
+.sbar i.cur{background:var(--accent);opacity:.45}
+.grade{text-align:center;padding:10px 0 4px}
+.grade .g{font:700 5.5rem/1 var(--serif);animation:pop .6s var(--ease) both}
+.grade p{color:var(--muted);margin:8px 0 16px}
+html[data-paper="lines"] .scroll{background-image:linear-gradient(var(--grid) 1px,transparent 1px);background-size:100% 28px}
+html[data-paper="plain"] .scroll{background-image:none}
+html[data-anim="off"] *,html[data-anim="off"] *:before,html[data-anim="off"] *:after{animation:none!important;transition:none!important}
+.sheet.full{max-height:94%;height:94%}
+.set-sec{font:600 .72rem var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:18px 6px 8px}
+.set-sec:first-child{margin-top:4px}
+.set-card{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.set-row{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:56px;width:100%;text-align:left}
+.set-row:last-child{border-bottom:0}
+.set-row.col{flex-direction:column;align-items:stretch;gap:10px}
+.set-row .lbl{font:500 .95rem/1.3 var(--sans)}
+.set-row .desc{display:block;font-size:.78rem;color:var(--muted);margin-top:2px;font-weight:400}
+.set-row .toggle{margin:0;flex:none}
+.set-row.danger{color:var(--red);font:500 .95rem var(--sans)}
+.seg.sm button{padding:7px 12px;font-size:.85rem}
+.swatches{display:flex;gap:12px;flex-wrap:wrap}
+.swatch{width:34px;height:34px;border-radius:50%;transition:transform .2s var(--ease),box-shadow .2s}
+.swatch.on{box-shadow:0 0 0 3px var(--card),0 0 0 5px var(--ink);transform:scale(1.05)}
+.about{text-align:center;padding:22px 18px 18px}
+.about .mark{width:64px;height:64px;margin:0 auto 10px}
+.about h2{margin:0;font:700 1.3rem var(--sans)}
+.about p{margin:6px 0 0;color:var(--muted);font-size:.86rem;line-height:1.45}
+.tg-btn{display:flex;align-items:center;justify-content:center;gap:10px;height:50px;border-radius:15px;background:#2AABEE;color:#fff;font:600 .98rem var(--sans);text-decoration:none;margin-top:16px;transition:transform .15s var(--ease)}
+.tg-btn:active{transform:scale(.97)}
+#splash{position:fixed;inset:0;background:#141A2E;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:50;transition:opacity .45s ease,visibility .45s}
+#splash.hide{opacity:0;visibility:hidden}
+.sp-logo .mark{width:88px;height:88px;animation:spl .8s cubic-bezier(.3,1.5,.5,1) both}
+.sp-name{font:700 1.6rem var(--sans);letter-spacing:.4px;animation:rise .6s .15s var(--ease) both}
+.sp-sub{font-size:.85rem;opacity:.6;animation:rise .6s .25s var(--ease) both}
+@keyframes spl{from{transform:scale(.4) rotate(-12deg);opacity:0}to{transform:none;opacity:1}}
+.stepcopy{display:flex;justify-content:flex-end;margin:-2px 0 6px}
+.k.fn svg{width:22px;height:22px}
+.kbar{display:flex;align-items:center;justify-content:space-between;padding:0 2px 6px}
+.kbar .grab{flex:1;padding:8px 0}
+.kb{width:52px;height:30px;border-radius:10px;font:500 1.3rem/1 var(--serif);color:var(--muted);transition:background .15s,transform .12s var(--ease)}
+.kb:active{background:var(--key-press);transform:scale(.92)}
+.k.vk{font-size:1.45rem}
+.vx{font-family:var(--serif);font-style:italic;padding:0 .04em}
+.xres{font-size:1.75rem!important;color:var(--accent)}
+.eqres{font:600 1.3rem var(--sans);color:var(--accent);padding:4px 2px 2px}
+.answer{background:linear-gradient(180deg,var(--accent-soft),transparent 60%),var(--card)}
+.viz{display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.vl{font:600 .68rem var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);flex:none}
+.pies{display:flex;gap:6px;flex-wrap:wrap}
+.pie{width:46px;height:46px}
+.pie .pf{fill:var(--accent);stroke:var(--card);stroke-width:1.1;animation:pfin .4s var(--ease) both;animation-delay:calc(var(--d,0)*25ms + 300ms)}
+.pie .pe{fill:var(--card2);stroke:var(--line);stroke-width:1}
+@keyframes pfin{from{opacity:0}to{opacity:1}}
+.step.chk .n{border-color:var(--green);color:var(--green);background:var(--card)}
+.step.chk .body{border-color:rgba(31,157,99,.35)}
+.vhead{font:700 .95rem var(--sans);margin:18px 0 2px;color:var(--accent)}
+.lp{font:500 .85rem var(--sans);color:var(--muted);margin-right:.4em}
+#solveScroll{padding-bottom:96px}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media (min-width:700px){.scroll>*{max-width:680px;margin-left:auto;margin-right:auto}.keys,.keypad .solve-wrap{max-width:560px;margin:0 auto}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 48 48" class="mark"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5B5EF5"/><stop offset="1" stop-color="#8B3FEA"/></linearGradient></defs><rect width="48" height="48" rx="13" fill="url(#lg)"/><g stroke="#fff" stroke-width="4.2" stroke-linecap="round" fill="none"><path d="M19 9l10 10M29 9L19 19"/><path d="M28.4 29.6A6.2 6.2 0 1 0 28.4 38.4"/></g><rect x="13" y="22.3" width="22" height="3.4" rx="1.7" fill="#FFC24B"/></svg>
+      <div><h1>XadoCalc</h1><p id="subtitle">решение по шагам</p></div>
+    </div>
+    <div class="hbtns">
+      <button class="icon-btn" id="themeBtn" aria-label="Сменить тему"></button>
+      <button class="icon-btn" id="setBtn" aria-label="Настройки"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M19 7h1M4 17h3M13 17h7"/><circle cx="16" cy="7" r="2.6"/><circle cx="10" cy="17" r="2.6"/></svg></button>
+    </div>
+  </header>
+  <main>
+        <section class="tab active" id="tab-solve">
+      <div class="scroll" id="solveScroll">
+        <div class="card input-card">
+          <div class="input-row">
+            <input id="expr" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Например: 3/4 + 5/6 или 2/3x = 4/5">
+            <button class="clear-x off" id="clearX" aria-label="Очистить"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+          </div>
+          <div class="preview" id="preview"><span class="ph">Здесь пример появится в «тетрадном» виде</span></div>
+        </div>
+        <div id="recentWrap" class="hidden"><div class="section-label">Недавние</div><div class="chips" id="recent"></div></div>
+        <div id="solution"></div>
+        <div class="empty" id="emptyState">
+          <a class="tg-card" href="https://t.me/xadohot"><span class="tg-ic"><svg viewBox="0 0 24 24" class="tgi"><path fill="currentColor" d="M21.4 4.2 2.9 11.3c-1 .4-1 1.6.1 1.9l4.6 1.4 1.7 5.3c.3.8 1.2 1 1.8.5l2.6-2.4 4.7 3.4c.7.5 1.6.1 1.8-.7l2.9-13.6c.3-1.1-.7-1.9-1.7-1.6zM9.9 14.6l8.2-6.6-6.6 7.6-.3 3.3z"/></svg></span><span class="tg-t"><b>XadoCalc в Telegram</b><small>Новости и обновления · @xadohot</small></span><svg class="chev2" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></a>
+          <div class="section-label">Примеры</div>
+          <div class="chips" id="examples"></div>
+          <p class="hint"><b>Как вводить:</b> дробь — кнопка <kbd>a/b</kbd> (3/4), смешанное число — <kbd>a b/c</kbd> (2 3/4), степень — <kbd>xⁿ</kbd> (можно отрицательную и дробную: (2/3)^−2, (4/9)^(1/2)), периодическая дробь — 0,(3), уравнение — с кнопками <kbd>x</kbd> и <kbd>=</kbd> (2/3x + 1/2 = 5/6).</p>
+        </div>
+      </div>
+      <button class="fab off" id="editFab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg>Новый пример</button>
+      <div class="keypad" id="keypad">
+        <div class="kbar"><button class="kb" data-v="left" aria-label="Влево">‹</button><div class="grab" id="grab"><span></span></div><button class="kb" data-v="right" aria-label="Вправо">›</button></div>
+        <div class="keys" id="keys"></div>
+      </div>
+    </section>
+        <section class="tab" id="tab-train">
+      <div class="scroll">
+        <div class="tabs2" id="trainMode"><div class="pill"></div><button class="on" data-m="practice">Тренировка</button><button data-m="variant">Вариант для класса</button></div>
+        <div class="section-label" style="margin-top:4px">Тема</div>
+        <div class="seg" id="topicSeg"></div>
+        <div class="section-label">Сложность</div>
+        <div class="seg" id="levelSeg"></div>
+        <div style="height:14px"></div>
+        <div class="card" id="practice">
+          <div class="score"><span>Решено верно: <b id="scOk">0</b> из <b id="scAll">0</b></span><span class="streak" id="streak">серия 0</span></div>
+          <div class="series"><div class="sbar" id="sbar"></div><span id="sLabel">0 / 10</span></div>
+          <div class="task math" id="task"></div>
+          <div class="ansbox" id="ansbox">
+            <span class="eqs">=</span>
+            <button class="sign" id="signBtn" aria-label="Знак">+</button>
+            <input class="box w" id="aW" inputmode="numeric" placeholder="цел" maxlength="6">
+            <div class="afr"><input class="box" id="aN" inputmode="numeric" placeholder="числ" maxlength="7"><div class="bar"></div><input class="box" id="aD" inputmode="numeric" placeholder="знам" maxlength="7"></div>
+          </div>
+          <div class="row">
+            <button class="btn pri" id="checkBtn">Проверить</button>
+            <button class="btn ghost" id="solBtn">Решение</button>
+            <button class="btn ghost" id="nextBtn">Дальше →</button>
+          </div>
+          <div class="fb" id="fb"></div>
+        </div>
+        <div class="card hidden" id="variant">
+          <div class="seg" id="nvarSeg" style="margin-bottom:10px"></div>
+          <div class="section-label" style="margin-top:0">Количество заданий</div>
+          <div class="seg" id="countSeg"></div>
+          <div class="toggle on" id="ansToggle"><div class="sw"></div>Показывать ответы</div>
+          <div id="varList"></div>
+          <div class="row" style="margin-top:14px">
+            <button class="btn pri" id="genVar">Новый вариант</button>
+            <button class="btn ghost" id="copyVar">Скопировать</button>
+          </div>
+        </div>
+      </div>
+    </section>
+        <section class="tab" id="tab-tools">
+      <div class="scroll">
+        <details class="card tool" open>
+          <summary><span class="ti"><span class="fr"><span class="fn">6</span><span class="fd">8</span></span></span><span>Сократить дробь<small>НОД по алгоритму Евклида</small></span><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <div class="tb">
+            <div class="two" style="grid-template-columns:1fr 1fr"><input class="field" id="rN" inputmode="numeric" placeholder="числитель" value="84"><input class="field" id="rD" inputmode="numeric" placeholder="знаменатель" value="126"></div>
+            <div class="out" id="rOut"></div>
+          </div>
+        </details>
+        <details class="card tool">
+          <summary><span class="ti">&lt;&gt;</span><span>Сравнить дроби<small>можно 3/4, 1 1/2, 0,75</small></span><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <div class="tb">
+            <div class="two"><input class="field" id="cA" placeholder="3/4" value="3/4"><div class="vs" id="cSign">?</div><input class="field" id="cB" placeholder="5/7" value="5/7"></div>
+            <div class="out" id="cOut"></div>
+          </div>
+        </details>
+        <details class="card tool">
+          <summary><span class="ti" style="font-size:.68rem">НОД</span><span>НОД и НОК<small>с разложением на простые множители</small></span><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <div class="tb">
+            <input class="field" id="gIn" inputmode="text" placeholder="например: 84, 90, 126" value="84, 90, 126">
+            <div class="out" id="gOut"></div>
+          </div>
+        </details>
+        <details class="card tool">
+          <summary><span class="ti" style="font-size:.7rem">a:b</span><span>Пропорция<small>найти неизвестный член: a/b = c/d</small></span><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <div class="tb">
+            <div class="two" style="grid-template-columns:1fr auto 1fr"><div class="afr" style="gap:6px"><input class="field" id="pA" placeholder="a" value="3"><div class="bar" style="width:100%"></div><input class="field" id="pB" placeholder="b" value="4"></div><div class="vs">=</div><div class="afr" style="gap:6px"><input class="field" id="pC" placeholder="c (или пусто)" value=""><div class="bar" style="width:100%"></div><input class="field" id="pD" placeholder="d" value="20"></div></div>
+            <div class="out" id="pOut"></div>
+          </div>
+        </details>
+        <details class="card tool">
+          <summary><span class="ti" style="font-size:.95rem">¾</span><span>Дробь от числа<small>и число по его дроби</small></span><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <div class="tb">
+            <div class="two"><input class="field" id="fA" placeholder="дробь" value="3/4"><div class="vs" style="font-size:1rem">от</div><input class="field" id="fB" placeholder="число" value="20"></div>
+            <div class="out" id="fOut"></div>
+          </div>
+        </details>
+        <details class="card tool">
+          <summary><span class="ti" style="font-size:.8rem">&lt;&lt;</span><span>Упорядочить дроби<small>по возрастанию и убыванию</small></span><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <div class="tb">
+            <input class="field" id="oIn" placeholder="3/4; 2/3; 5/6; 0,7" value="3/4; 2/3; 5/6; 0,7">
+            <div class="out" id="oOut"></div>
+          </div>
+        </details>
+        <details class="card tool">
+          <summary><span class="ti">0,5</span><span>Десятичные ↔ обыкновенные<small>в т.ч. периодические: 0,1(6)</small></span><svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <div class="tb">
+            <input class="field" id="dIn" placeholder="0,1(6) или 7/12" value="0,1(6)">
+            <div class="out" id="dOut"></div>
+          </div>
+        </details>
+      </div>
+    </section>
+  </main>
+  <nav class="bottom" id="nav">
+    <button class="on" data-t="solve"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 4v6M6.5 12.5h5M6 16h6M15 20l4-12"/></svg></span>Решатель</button>
+    <button data-t="train"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="M12 12l7-7"/></svg></span>Тренажёр</button>
+    <button data-t="tools"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><path d="M16.5 14v5M14 16.5h5"/></svg></span>Инструменты</button>
+  </nav>
+</div>
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet"><div class="sh-head"><span>Решение</span><button id="sheetClose" aria-label="Закрыть"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="scroll" id="sheetBody"></div></div>
+<div class="sheet full" id="settings"><div class="sh-head"><span>Настройки</span><button id="setClose" aria-label="Закрыть"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="scroll" id="setBody"></div></div>
+<div class="toast" id="toast"></div>
+<div id="splash"><div class="sp-logo"><svg viewBox="0 0 48 48" class="mark"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5B5EF5"/><stop offset="1" stop-color="#8B3FEA"/></linearGradient></defs><rect width="48" height="48" rx="13" fill="url(#lg)"/><g stroke="#fff" stroke-width="4.2" stroke-linecap="round" fill="none"><path d="M19 9l10 10M29 9L19 19"/><path d="M28.4 29.6A6.2 6.2 0 1 0 28.4 38.4"/></g><rect x="13" y="22.3" width="22" height="3.4" rx="1.7" fill="#FFC24B"/></svg></div><div class="sp-name">XadoCalc</div><div class="sp-sub">дроби · степени · решение по шагам</div></div>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
